@@ -1,28 +1,30 @@
-import { Elysia } from "elysia";
+import mongoose from "mongoose";
 import { routes } from "./routes";
 import { jwt } from '@elysiajs/jwt'
-import { cookie } from '@elysiajs/cookie'
 import { cors } from '@elysiajs/cors'
-import mongoose from "mongoose";
+import { cookie } from '@elysiajs/cookie'
+import { Elysia, InternalRoute } from "elysia";
+import { jwtConfig } from "./config/jwtConfig";
+import { corsConfig } from "./config/corsConfig";
 
+const PORT: string | 8080 = process.env.PORT || 8080;
+
+// connect to mongodb
 await mongoose.connect(process.env.MONGODB_SERVER as string + process.env.DB_NAME as string);
-const PORT = process.env.PORT || 8080;
 
-const jwtConfig = {
-  name: 'jwtPlugin',
-  secret: process.env.JWT_SECRET as string
-}
-
-export const server  = new Elysia()
+// create Elysia server
+export const server: Elysia  = new Elysia()
   .use(jwt(jwtConfig))
   .use(cookie())
-  .use(cors())
+  .use(cors(corsConfig))
 
+// create application routes
 routes(server);
 
-server.listen(PORT, () => {
+// listen server
+server.listen(PORT, (): void => {
   console.log('-'.repeat(50));
-  server.routes.forEach((route) => {
+  server.routes.forEach((route: InternalRoute): void => {
     if (route.path === '/*') {
       return;
     }

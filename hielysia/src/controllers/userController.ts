@@ -1,60 +1,57 @@
 import { User } from '../models/UserModel';
+import { userContextProps } from "../interfaces/userInterface";
 
-export const login = async (context: any) => {
-  const user = await User.findOne({ username: context.body.username });
-
-  if (!user) {
-    return {
-      message: 'User not found'
-    }
-  }
-
-  const isPasswordMatched = await Bun.password.verify(
-    context.body.password,
-    user.password,
-  );
-
-  if (!isPasswordMatched) {
-    return {
-      message: 'Password is not matched',
-    };
-  }
-
-  const accessToken = await context.jwtPlugin.sign({
-    userId: user._id,
-  });
-
-  context.setCookie("access_token", accessToken, {
-    maxAge: 15 * 60,
-    path: "/",
-  });
-
-  return {
-    message: 'success',
-    username: user.username,
-    role: 'admin',
-    token: accessToken
-  }
-}
-
-export const register = async (context: any) => {
-
-
-  const newUser = new User({
-    username: context.body.username,
-    password: await Bun.password.hash(context.body.password)
-  });
-
-  console.log(context)
-
-  await newUser.save();
-
-  return 'sve kul'
-}
-
+/**
+ * Fetches all users from the database.
+ * @returns - Array of users.
+ */
 export const getUsers = async () => {
-  const users = await User.find();
+  try {
+    return await User.find();
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw error;  // Rethrow or handle it based on your use-case
+  }
+};
 
-  console.log(users)
-  return users
-}
+/**
+ * Fetches a user by their username.
+ * @param username The username of the user.
+ * @returns - The user object or null if not found.
+ */
+export const getUserByUsername = async ({ body }: userContextProps) => {
+  try {
+    return await User.findOne({ username: body.username });
+  } catch (error) {
+    console.error(`Error fetching user with username ${body.username}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Updates a user's details.
+ * @param body Contains the user details to update.
+ * @returns - The updated user object or null if not found.
+ */
+export const updateUser = async ({ body }: userContextProps) => {
+  try {
+    return await User.findOneAndUpdate({username: body.username}, body, {new: true});
+  } catch (error) {
+    console.error(`Error updating user with username ${body.username}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes a user by their username.
+ * @param username The username of the user.
+ * @returns - Delete result object.
+ */
+export const deleteUser = async ({ body }: userContextProps) => {
+  try {
+    return await User.deleteOne({ username: body.username });
+  } catch (error) {
+    console.error(`Error deleting user with username ${body.username}:`, error);
+    throw error;
+  }
+};
